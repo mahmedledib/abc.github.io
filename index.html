@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABC Data Labeling Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+[data-theme="dark"]{--bg:#0d0f14;--surface:#151820;--surface2:#1c2030;--surface3:#232840;--text:#e8eaf2;--text2:#8b90a8;--text3:#555d7a;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--input-bg:#1c2030;--shadow:rgba(0,0,0,.4);}
+[data-theme="light"]{--bg:#f0f2f8;--surface:#ffffff;--surface2:#f5f6fa;--surface3:#eaecf4;--text:#1a1d2e;--text2:#555d7a;--text3:#9ba3c0;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--input-bg:#f5f6fa;--shadow:rgba(0,0,0,.08);}
+:root{--accent:#4f8ef7;--accent2:#7c5cfc;--success:#2dd4a0;--warning:#f5a623;--danger:#f06070;--radius:10px;--radius-lg:16px;--font:'Sora',sans-serif;--mono:'DM Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:14px;transition:background .2s,color .2s;}
+.theme-btn{background:none;border:1px solid var(--border2);color:var(--text2);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:1000;}
+.login-card{width:400px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:44px 40px;box-shadow:0 8px 32px var(--shadow);}
+.login-brand h1{font-size:20px;font-weight:700;letter-spacing:-.4px;}.login-brand h1 span{color:var(--accent);}
+.login-brand p{color:var(--text2);font-size:12px;margin-top:5px;margin-bottom:28px;}
+.field{margin-bottom:15px;}
+.field label{display:block;font-size:11px;color:var(--text2);margin-bottom:5px;letter-spacing:.6px;text-transform:uppercase;}
+.field input{width:100%;padding:10px 14px;background:var(--input-bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border .2s;}
+.field input:focus{border-color:var(--accent);}
+.btn-primary{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;transition:opacity .2s,transform .1s;margin-top:4px;}
+.btn-primary:hover{opacity:.9;}.btn-primary:active{transform:scale(.98);}
+#login-error{color:var(--danger);font-size:12px;margin-top:10px;text-align:center;min-height:16px;}
+.login-theme-row{display:flex;justify-content:flex-end;margin-bottom:16px;}
+
+/* TOPBAR */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;box-shadow:0 1px 4px var(--shadow);}
+.topbar-brand .t1{font-size:13px;font-weight:600;}.topbar-brand .t1 span{color:var(--accent);}
+.topbar-brand .t2{font-size:10px;color:var(--text3);}
+.topbar-sep{flex:1;}
+.pill{font-family:var(--mono);font-size:12px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;}
+.pill-labeled{color:var(--success);border-color:rgba(45,212,160,.25);background:rgba(45,212,160,.07);}
+.topbar-user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;}
+.avatar.admin-av{background:var(--warning);}
+.btn-sm{background:none;border:1px solid var(--border2);color:var(--text2);padding:5px 12px;border-radius:var(--radius);font-family:var(--font);font-size:12px;cursor:pointer;transition:border-color .2s,color .2s;}
+.btn-sm:hover{border-color:var(--danger);color:var(--danger);}
+
+/* LABELER */
+#labeler-app{display:none;height:100vh;flex-direction:column;}
+#labeler-app.visible{display:flex;}
+.main-layout{display:flex;flex:1;overflow:hidden;}
+.image-panel{width:44%;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--bg);}
+.image-toolbar{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface);flex-shrink:0;}
+.image-name{font-family:var(--mono);font-size:12px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.prefetch-dot{width:7px;height:7px;border-radius:50%;background:var(--success);opacity:0;transition:opacity .3s;flex-shrink:0;title:"Prochaine image prête";}
+.prefetch-dot.ready{opacity:1;}
+.image-container{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg);}
+#rx-image{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;transition:opacity .2s;}
+#rx-image.fading{opacity:0;}
+.image-placeholder{display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--text3);}
+.image-placeholder p{font-size:13px;}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* LABEL PANEL */
+.label-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.label-header{padding:10px 14px 9px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.label-header h2{font-size:10px;font-weight:600;margin-bottom:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;}
+.action-buttons{display:flex;gap:6px;}
+.btn-action{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--font);font-size:11px;cursor:pointer;transition:all .15s;}
+.btn-action:hover{background:var(--surface3);border-color:var(--accent);color:var(--accent);}
+.btn-action .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-drug{background:var(--accent);}.dot-analyse{background:var(--success);}.dot-radio{background:var(--warning);}
+
+/* TABLE */
+.table-section{flex:1;overflow-y:auto;padding:10px 14px;}
+.table-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:90px;color:var(--text3);font-size:12px;gap:6px;}
+.data-table{width:100%;border-collapse:collapse;font-size:11px;}
+.data-table th{text-align:left;padding:4px 6px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-family:var(--mono);text-transform:uppercase;font-size:10px;}
+.data-table td{padding:0;border-bottom:1px solid var(--border);vertical-align:top;}
+/* new-row always in edit mode */
+tr.new-row td,.data-table tr.editing td{background:rgba(79,142,247,.04);vertical-align:middle;}
+.type-badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;font-family:var(--mono);}
+.badge-drug{background:rgba(79,142,247,.15);color:var(--accent);}
+.badge-analyse{background:rgba(45,212,160,.15);color:var(--success);}
+.badge-radio{background:rgba(245,166,35,.15);color:var(--warning);}
+
+/* VIEW ROW */
+.view-cell{padding:8px 10px;color:var(--text2);font-size:12px;line-height:1.5;}
+.row-actions{display:flex;gap:2px;align-items:center;padding:4px 4px;}
+.btn-row{background:none;border:1px solid transparent;cursor:pointer;padding:2px 5px;border-radius:4px;font-size:11px;transition:all .15s;font-family:var(--mono);line-height:1;}
+.btn-edit{color:var(--text3);}.btn-edit:hover{color:var(--accent);border-color:var(--accent);background:rgba(79,142,247,.08);}
+.btn-remove{color:var(--text3);}.btn-remove:hover{color:var(--danger);border-color:var(--danger);background:rgba(240,96,112,.08);}
+.btn-save-row{color:var(--success);border-color:rgba(45,212,160,.3);background:rgba(45,212,160,.06);}.btn-save-row:hover{background:rgba(45,212,160,.15);}
+.btn-cancel-row{color:var(--text3);}.btn-cancel-row:hover{color:var(--text2);border-color:var(--border2);}
+
+/* EDIT ROW — uses the same modal-grid style as previous version */
+.edit-wrap{padding:10px 10px 8px;}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.edit-grid.span-full{grid-column:1/-1;}
+.ef{display:flex;flex-direction:column;gap:4px;}
+.ef label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.ef input,.ef select,.ef textarea{padding:7px 10px;background:var(--input-bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color .2s;width:100%;}
+.ef input:focus,.ef select:focus,.ef textarea:focus{border-color:var(--accent);}
+.ef select option{background:var(--surface2);}
+.ef textarea{resize:vertical;min-height:60px;}
+.ef.full{grid-column:1/-1;}
+/* mandatory error */
+.ef input.required-err,.ef select.required-err{border-color:var(--danger)!important;background:rgba(240,96,112,.06)!important;}
+/* input + unit addon */
+.iu{display:flex;}
+.iu input{flex:1;border-radius:var(--radius) 0 0 var(--radius);}
+.iu select{width:72px;border-radius:0 var(--radius) var(--radius) 0;border-left:none;}
+.iu input:focus,.iu select:focus{border-color:var(--accent);z-index:1;position:relative;}
+/* autocomplete */
+.ac-wrap{position:relative;}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);max-height:200px;overflow-y:auto;z-index:400;margin-top:2px;box-shadow:0 6px 20px var(--shadow);}
+.ac-list div{padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);}
+.ac-list div:last-child{border-bottom:none;}
+.ac-list div:hover,.ac-list div.ac-active{background:var(--surface2);}
+.ac-list div mark{background:none;color:var(--accent);font-weight:600;}
+
+/* SAVE BAR */
+.save-bar{padding:9px 14px;border-top:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.status-msg{font-size:11px;font-family:var(--mono);color:var(--danger);flex:1;min-height:14px;}
+.btn-flag{padding:6px 9px;background:none;border:1px solid var(--border2);color:var(--text2);border-radius:var(--radius);font-family:var(--font);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-flag.illegible:hover{border-color:var(--warning);color:var(--warning);}
+.btn-flag.bad-image:hover{border-color:var(--danger);color:var(--danger);}
+.btn-skip{padding:6px 11px;background:none;border:1px solid var(--border2);color:var(--text2);border-radius:var(--radius);font-family:var(--font);font-size:12px;cursor:pointer;}
+.btn-skip:hover{border-color:var(--text2);}
+.btn-save{padding:8px 18px;background:var(--success);color:#0d1a16;border:none;border-radius:var(--radius);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s,transform .1s;white-space:nowrap;}
+.btn-save:hover{opacity:.9;}.btn-save:active{transform:scale(.98);}
+.btn-save:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+
+/* MODALS (flag only) */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(4px);}
+.modal-backdrop.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:26px;width:370px;animation:slideUp .18s ease;box-shadow:0 12px 40px var(--shadow);}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:10px;justify-content:center;}
+.flag-icon{font-size:32px;text-align:center;display:block;margin-bottom:8px;}
+.flag-desc{color:var(--text2);font-size:13px;line-height:1.6;text-align:center;margin-bottom:16px;}
+.flag-desc strong{color:var(--text);}
+.modal-actions{display:flex;gap:10px;}
+.btn-cancel{flex:1;padding:9px;background:none;border:1px solid var(--border2);color:var(--text2);border-radius:var(--radius);font-family:var(--font);font-size:13px;cursor:pointer;}
+.btn-cancel:hover{border-color:var(--text2);}
+.btn-flag-confirm{flex:2;padding:9px;color:#fff;border:none;border-radius:var(--radius);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;}
+
+/* ADMIN */
+#admin-app{display:none;height:100vh;flex-direction:column;}
+#admin-app.visible{display:flex;}
+.admin-body{flex:1;overflow-y:auto;padding:22px 26px;}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:0 2px 8px var(--shadow);}
+.stat-card .sc-val{font-size:26px;font-weight:700;font-family:var(--mono);margin-bottom:3px;}
+.stat-card .sc-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.stat-card.c-blue .sc-val{color:var(--accent);}.stat-card.c-green .sc-val{color:var(--success);}.stat-card.c-yellow .sc-val{color:var(--warning);}.stat-card.c-red .sc-val{color:var(--danger);}
+.section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;margin-top:26px;}
+.section-title:first-of-type{margin-top:0;}
+.admin-table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+.admin-table th{text-align:left;padding:7px 12px;color:var(--text3);font-size:11px;font-family:var(--mono);text-transform:uppercase;border-bottom:1px solid var(--border2);}
+.admin-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2);vertical-align:middle;}
+.admin-table tr:hover td{background:var(--surface2);}
+.admin-table td:first-child{color:var(--text);font-weight:500;}
+.prog-wrap{display:flex;align-items:center;gap:8px;}
+.prog-bar{flex:1;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s;}
+.prog-pct{font-family:var(--mono);font-size:11px;color:var(--text3);width:34px;text-align:right;}
+.timeline-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(28px,1fr));gap:3px;margin-bottom:20px;}
+.tl-day{height:26px;border-radius:3px;position:relative;cursor:default;}
+.tl-day:hover .tl-tip{display:block;}
+.tl-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--text);white-space:nowrap;z-index:10;}
+.flag-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-family:var(--mono);}
+.flag-illegible{background:rgba(245,166,35,.15);color:var(--warning);}
+.flag-bad{background:rgba(240,96,112,.15);color:var(--danger);}
+.flag-labeled{background:rgba(45,212,160,.15);color:var(--success);}
+.search-row{display:flex;gap:8px;margin-bottom:12px;}
+.search-box,.filter-select{padding:7px 12px;background:var(--input-bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--font);font-size:13px;outline:none;}
+.search-box{flex:1;}.search-box:focus{border-color:var(--accent);}
+.filter-select option{background:var(--surface2);}
+.btn-refresh{padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:var(--radius);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;}
+.btn-refresh:hover{border-color:var(--accent);color:var(--accent);}
+
+/* MANDATORY FIELDS CONFIG */
+.mf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.mf-card{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 14px;}
+.mf-card h4{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.mf-item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:var(--text2);}
+.mf-item input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;flex-shrink:0;}
+.btn-save-config{padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;}
+.btn-save-config:hover{opacity:.88;}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;padding:11px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;animation:toastIn .22s ease;z-index:900;box-shadow:0 4px 16px var(--shadow);}
+.toast.success{background:var(--success);color:#0d1a16;}.toast.error{background:var(--danger);color:#fff;}.toast.warning{background:var(--warning);color:#1a1000;}
+@keyframes toastIn{from{opacity:0;transform:translateY(6px)}}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-theme-row"><button class="theme-btn" onclick="toggleTheme()" id="tb-login">🌙</button></div>
+    <div class="login-brand"><h1><span>ABC</span> Data Labeling Platform</h1><p>Plateforme d'étiquetage d'ordonnances médicales</p></div>
+    <form onsubmit="login(event)" autocomplete="on">
+      <div class="field"><label>Nom d'utilisateur</label><input type="text" id="username" name="username" placeholder="utilisateur" autocomplete="username"></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button type="submit" class="btn-primary">Connexion</button>
+    </form>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- LABELER -->
+<div id="labeler-app">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="t1"><span>ABC</span> Data Labeling</div><div class="t2">Étiquetage</div></div>
+    <div class="pill" id="img-counter">— / —</div>
+    <div class="pill pill-labeled" id="my-counter" style="display:none"></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-user"><div class="avatar" id="user-avatar"></div><span id="user-name-display"></span></div>
+    <button class="theme-btn" onclick="toggleTheme()" id="tb-app">🌙</button>
+    <button class="btn-sm" onclick="logout()">Déconnexion</button>
+  </div>
+  <div class="main-layout">
+    <div class="image-panel">
+      <div class="image-toolbar">
+        <div class="image-name" id="current-img-name">Chargement...</div>
+        <div class="prefetch-dot" id="prefetch-dot"></div>
+      </div>
+      <div class="image-container">
+        <div class="image-placeholder" id="img-placeholder"><div class="spinner"></div><p>Chargement...</p></div>
+        <img id="rx-image" src="" alt="" style="display:none">
+      </div>
+    </div>
+    <div class="label-panel">
+      <div class="label-header">
+        <h2>Ajouter une étiquette</h2>
+        <div class="action-buttons">
+          <button class="btn-action" onclick="addRow('drug')"><span class="dot dot-drug"></span>+ Médicament</button>
+          <button class="btn-action" onclick="addRow('analyse')"><span class="dot dot-analyse"></span>+ Analyse</button>
+          <button class="btn-action" onclick="addRow('radio')"><span class="dot dot-radio"></span>+ Radio</button>
+        </div>
+      </div>
+      <div class="table-section">
+        <div class="table-empty" id="table-empty">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <span>Cliquez sur un bouton ci-dessus pour ajouter</span>
+        </div>
+        <table class="data-table" id="data-table" style="display:none">
+          <thead><tr><th style="width:22px">#</th><th style="width:64px">Type</th><th>Détails</th><th style="width:52px"></th></tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="save-bar">
+        <div class="status-msg" id="status-msg"></div>
+        <button class="btn-flag illegible" onclick="confirmFlag('illegible')">✋ Illisible</button>
+        <button class="btn-flag bad-image" onclick="confirmFlag('bad_image')">📷 Mauvaise</button>
+        <button class="btn-skip" onclick="skipImage()">Passer →</button>
+        <button class="btn-save" id="btn-save" onclick="saveLabel()" disabled>💾 Sauvegarder</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-app">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="t1"><span>ABC</span> Data Labeling — <span style="color:var(--warning)">Admin</span></div><div class="t2">Tableau de bord</div></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-user"><div class="avatar admin-av" id="admin-avatar"></div><span id="admin-name-display"></span></div>
+    <button class="btn-refresh" onclick="adminRefresh()">↻ Actualiser</button>
+    <button class="theme-btn" onclick="toggleTheme()" id="tb-admin">🌙</button>
+    <button class="btn-sm" onclick="logout()">Déconnexion</button>
+  </div>
+  <div class="admin-body" id="admin-body">
+    <div style="display:flex;align-items:center;gap:12px;color:var(--text3);padding:40px 0;"><div class="spinner"></div><span>Chargement...</span></div>
+  </div>
+</div>
+
+<!-- FLAG MODAL -->
+<div class="modal-backdrop" id="modal-flag">
+  <div class="modal">
+    <span class="flag-icon" id="flag-icon"></span>
+    <h3 id="flag-title"></h3>
+    <p class="flag-desc" id="flag-desc"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeFlag()">Annuler</button>
+      <button class="btn-flag-confirm" id="flag-confirm-btn" onclick="submitFlag()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════ CONFIG ═══════════════════════════════════════════
+const CONFIG={
+  GITHUB_TOKEN:'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',
+  OWNER:'mahmedledib', REPO:'abc-data-labeling', BRANCH:'main',
+  IMAGES_PATH:'images', PROCESSED_PATH:'processed_images', LABELED_PATH:'labeled_data',
+  DRUG_CSV_PATH:'drug_names.csv',
+  PROGRESS_FILE:'state/progress.json', FLAGS_FILE:'state/flags.json', CONFIG_FILE:'state/config.json',
+};
+
+const USERS=[
+  {username:'admin',   password:'admin123', displayName:'Administrateur',role:'admin'},
+  {username:'labeler1',password:'pass1234', displayName:'Étiqueteur 1',  role:'labeler'},
+  {username:'labeler2',password:'pass5678', displayName:'Étiqueteur 2',  role:'labeler'},
+];
+
+// Field definitions for each type
+const DRUG_FIELDS=[
+  {key:'drug_name',    label:'Nom'},
+  {key:'strength',     label:'Force'},
+  {key:'second_ingreadient_strength',label:'2ème ingr.'},
+  {key:'form',         label:'Forme'},
+  {key:'quantity',     label:'Qté'},
+  {key:'frequency',    label:'Fréquence'},
+  {key:'duration',     label:'Durée'},
+];
+const ANALYSE_FIELDS=[
+  {key:'test_name',label:'Nom'},
+  {key:'type',     label:'Type'},
+  {key:'urgency',  label:'Urgence'},
+  {key:'fasting',  label:'À jeun'},
+  {key:'frequency',label:'Fréquence'},
+  {key:'notes',    label:'Notes'},
+];
+const RADIO_FIELDS=[
+  {key:'body_part', label:'Région'},
+  {key:'exam_type', label:'Type examen'},
+  {key:'side',      label:'Côté'},
+  {key:'urgency',   label:'Urgence'},
+  {key:'notes',     label:'Notes'},
+];
+
+// Default mandatory config (admin can change)
+let mandatoryConfig={
+  drug:['drug_name'],
+  analyse:['test_name'],
+  radio:['body_part'],
+};
+
+// ═══════ STATE ════════════════════════════════════════════
+let currentUser=null,imageFiles=[],currentIdx=-1;
+let entries=[],drugNames=[],progress={},flags={};
+let pendingFlag=null,labelCounter=0,myLabeledCount=0,lockedFile=null;
+let prefetchCache={},prefetchingFor=null;
+let uploadQueue=[],uploading=false;
+const SESSION_KEY='abc_labeling_session';
+
+// ═══════ THEME ════════════════════════════════════════════
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('abc_theme',t);
+  const ic=t==='dark'?'🌙':'☀️';
+  ['tb-login','tb-app','tb-admin'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=ic;});
+}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
+applyTheme(localStorage.getItem('abc_theme')||'dark');
+
+// ═══════ GITHUB ═══════════════════════════════════════════
+const GH={
+  h(){return{'Authorization':`token ${CONFIG.GITHUB_TOKEN}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};},
+  base(){return`https://api.github.com/repos/${CONFIG.OWNER}/${CONFIG.REPO}`;},
+  async listFolder(p){const r=await fetch(`${this.base()}/contents/${p}?ref=${CONFIG.BRANCH}`,{headers:this.h()});if(r.status===404)return[];if(!r.ok)throw new Error(`list ${p}: ${r.status}`);return r.json();},
+  async getFile(p){const r=await fetch(`${this.base()}/contents/${p}?ref=${CONFIG.BRANCH}`,{headers:this.h()});if(r.status===404)return null;if(!r.ok)throw new Error(`get ${p}: ${r.status}`);return r.json();},
+  async putFile(p,content,msg,sha=null){const b={message:msg,content:btoa(unescape(encodeURIComponent(content))),branch:CONFIG.BRANCH};if(sha)b.sha=sha;const r=await fetch(`${this.base()}/contents/${p}`,{method:'PUT',headers:this.h(),body:JSON.stringify(b)});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`put ${p}: ${r.status} ${e.message||''}`);}return r.json();},
+  async putBinary(p,b64,msg,sha=null){const b={message:msg,content:b64,branch:CONFIG.BRANCH};if(sha)b.sha=sha;const r=await fetch(`${this.base()}/contents/${p}`,{method:'PUT',headers:this.h(),body:JSON.stringify(b)});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`putB ${p}: ${r.status} ${e.message||''}`);}return r.json();},
+  async deleteFile(p,msg,sha){const b={message:msg,sha,branch:CONFIG.BRANCH};const r=await fetch(`${this.base()}/contents/${p}`,{method:'DELETE',headers:this.h(),body:JSON.stringify(b)});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`del ${p}: ${r.status} ${e.message||''}`);}return r.json();},
+};
+
+async function readState(p){const f=await GH.getFile(p);if(!f)return{data:{},sha:null};return{data:JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g,''))))),sha:f.sha};}
+
+async function writeStateWith(p,mutator,msg,maxRetries=4){
+  for(let i=0;i<maxRetries;i++){
+    const{data,sha}=await readState(p);
+    const nd=mutator(data);
+    try{return await GH.putFile(p,JSON.stringify(nd,null,2),msg,sha);}
+    catch(e){if(e.message.includes('409')&&i<maxRetries-1){await new Promise(r=>setTimeout(r,300*(i+1)));continue;}throw e;}
+  }
+}
+
+// ═══════ SESSION ══════════════════════════════════════════
+function saveSession(u){localStorage.setItem(SESSION_KEY,JSON.stringify({username:u.username,exp:Date.now()+7*86400000}));}
+function loadSession(){try{const s=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');if(!s||Date.now()>s.exp)return null;return USERS.find(u=>u.username===s.username)||null;}catch{return null;}}
+function clearSession(){localStorage.removeItem(SESSION_KEY);}
+
+// ═══════ LOGIN ════════════════════════════════════════════
+function login(e){
+  if(e)e.preventDefault();
+  const u=document.getElementById('username').value.trim(),p=document.getElementById('password').value;
+  const user=USERS.find(x=>x.username===u&&x.password===p);
+  if(!user){document.getElementById('login-error').textContent='Identifiants incorrects.';return;}
+  document.getElementById('login-error').textContent='';
+  currentUser=user; saveSession(user);
+  document.getElementById('login-screen').style.display='none';
+  if(user.role==='admin')launchAdmin();else launchLabeler();
+}
+async function logout(){
+  lockedFile=null;
+  clearSession(); currentUser=null; imageFiles=[]; entries=[]; currentIdx=-1; prefetchCache={};
+  document.getElementById('labeler-app').classList.remove('visible');
+  document.getElementById('admin-app').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('username').value='';
+  document.getElementById('password').value='';
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  const s=loadSession(); if(s){currentUser=s; document.getElementById('login-screen').style.display='none'; if(s.role==='admin')launchAdmin();else launchLabeler();}
+});
+
+// ═══════ LABELER INIT ═════════════════════════════════════
+function launchLabeler(){
+  document.getElementById('labeler-app').classList.add('visible');
+  document.getElementById('user-name-display').textContent=currentUser.displayName;
+  document.getElementById('user-avatar').textContent=initials(currentUser.displayName);
+  initLabeler();
+}
+async function initLabeler(){
+  setStatus('Chargement...');
+  try{
+    const[[{data:prog},{data:flg},{data:cfg}]]=await Promise.all([
+      Promise.all([readState(CONFIG.PROGRESS_FILE),readState(CONFIG.FLAGS_FILE),readState(CONFIG.CONFIG_FILE)]),
+      loadDrugNames(),
+    ]);
+    progress=prog; flags=flg;
+    if(cfg.mandatory) mandatoryConfig=cfg.mandatory;
+    myLabeledCount=Object.values(progress).filter(p=>p.labeled_by===currentUser.username).length;
+    updateMyCounter();
+    await loadImageList();
+  }catch(e){setStatus('Erreur init: '+e.message);showToast('Erreur connexion GitHub','error');console.error(e);}
+}
+
+async function loadDrugNames(){
+  try{const f=await GH.getFile(CONFIG.DRUG_CSV_PATH);if(!f)return;const txt=decodeURIComponent(escape(atob(f.content.replace(/\n/g,''))));drugNames=txt.split('\n').map(l=>l.split(',')[0].replace(/"/g,'').trim()).filter(Boolean).filter(n=>!['name','drug_name','nom','medicament'].includes(n.toLowerCase()));drugNames.sort();}
+  catch(e){console.warn('drug CSV:',e.message);}
+}
+async function loadImageList(){
+  setStatus('');
+  const files=await GH.listFolder(CONFIG.IMAGES_PATH);
+  imageFiles=files.filter(f=>/\.(jpe?g|png|webp|bmp)$/i.test(f.name)).sort((a,b)=>{const na=parseInt(a.name)||a.name,nb=parseInt(b.name)||b.name;return na<nb?-1:na>nb?1:0;});
+  const proc=await GH.listFolder(CONFIG.LABELED_PATH);
+  const used=proc.filter(f=>/^\d+\.(jpe?g|png|webp|bmp)$/i.test(f.name)).map(f=>parseInt(f.name));
+  labelCounter=used.length?Math.max(...used)+1:0;
+  updateCounter(); await assignNextImage();
+}
+function updateCounter(){const l=Object.keys(progress).length,t=imageFiles.length;document.getElementById('img-counter').textContent=`${l}/${t} étiquetées`;}
+function updateMyCounter(){const el=document.getElementById('my-counter');el.style.display='';el.textContent=`Moi: ${myLabeledCount}`;}
+
+// ═══════ IMAGE ASSIGNMENT ════════════════════════════════
+async function assignNextImage(){
+  // Re-read progress to get latest state (another user may have just saved)
+  const{data:freshProg}=await readState(CONFIG.PROGRESS_FILE);
+  progress=freshProg;
+
+  // Pick a random unlabeled image not flagged by this user
+  const available=imageFiles.filter(f=>{
+    if(progress[f.name]) return false;
+    const fl=flags[f.name]||[];
+    return !fl.some(x=>x.flagged_by===currentUser.username);
+  });
+  // Fallback: flagged by others but not by us
+  const fallback=available.length?[]:imageFiles.filter(f=>{
+    if(progress[f.name]) return false;
+    const fl=flags[f.name]||[];
+    return fl.length>0 && !fl.some(x=>x.flagged_by===currentUser.username);
+  });
+  const pool=available.length?available:fallback;
+  const pick=pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
+
+  if(!pick){
+    setStatus('');
+    document.getElementById('img-placeholder').innerHTML='<p style="color:var(--success)">✅ Terminé !</p>';
+    document.getElementById('img-placeholder').style.display='flex';
+    document.getElementById('rx-image').style.display='none';
+    document.getElementById('current-img-name').textContent='—';
+    document.getElementById('btn-save').disabled=true;
+    return;
+  }
+  lockedFile=pick.name;
+  currentIdx=imageFiles.indexOf(pick);
+  await loadCurrentImage();
+  prefetchNext();
+}
+
+// No locking — conflict resolved at save time (first writer wins)
+function releaseLock(fn){ lockedFile=null; return Promise.resolve(); }
+
+// ═══════ IMAGE DISPLAY ════════════════════════════════════
+async function loadCurrentImage(){
+  if(currentIdx<0||currentIdx>=imageFiles.length)return;
+  const file=imageFiles[currentIdx];
+  document.getElementById('current-img-name').textContent=file.name;
+  const rxImg=document.getElementById('rx-image');
+  const flist=flags[file.name]||[];
+  setStatus(flist.length?'⚠ Déjà signalée par: '+flist.map(f=>f.flagged_by).join(', '):'');
+  entries=[]; renderTable();
+
+  // If prefetched, show instantly
+  const b64=prefetchCache[file.name]||null;
+  if(b64){
+    delete prefetchCache[file.name];
+    showImage(rxImg,b64,file.name);
+    document.getElementById('btn-save').disabled=false;
+    return;
+  }
+  // Otherwise show spinner then fetch
+  document.getElementById('img-placeholder').innerHTML='<div class="spinner"></div><p>Chargement...</p>';
+  document.getElementById('img-placeholder').style.display='flex';
+  rxImg.style.display='none';
+  document.getElementById('btn-save').disabled=true;
+  try{
+    const fd=await GH.getFile(`${CONFIG.IMAGES_PATH}/${file.name}`);
+    if(!fd)throw new Error('Image introuvable');
+    showImage(rxImg,fd.content.replace(/\n/g,''),file.name);
+    document.getElementById('btn-save').disabled=false;
+  }catch(e){document.getElementById('img-placeholder').innerHTML=`<p style="color:var(--danger)">Erreur: ${e.message}</p>`;}
+}
+
+function showImage(imgEl,b64,name){
+  const mime=name.match(/\.png$/i)?'image/png':name.match(/\.webp$/i)?'image/webp':'image/jpeg';
+  imgEl.dataset.b64=b64;
+  imgEl.onload=()=>{document.getElementById('img-placeholder').style.display='none';imgEl.style.display='block';imgEl.classList.remove('fading');};
+  imgEl.classList.add('fading');
+  imgEl.src=`data:${mime};base64,${b64}`;
+}
+
+async function prefetchNext(){
+  document.getElementById('prefetch-dot').classList.remove('ready');
+  const next=imageFiles.find((f,i)=>{
+    if(i<=currentIdx||progress[f.name])return false;
+    const lk=locks[f.name]; if(lk&&lk.locked_by!==currentUser.username)return false;
+    return!(flags[f.name]||[]).some(fl=>fl.flagged_by===currentUser.username);
+  });
+  if(!next||prefetchCache[next.name]||prefetchingFor===next.name)return;
+  prefetchingFor=next.name;
+  try{const fd=await GH.getFile(`${CONFIG.IMAGES_PATH}/${next.name}`);if(fd){prefetchCache[next.name]=fd.content.replace(/\n/g,'');document.getElementById('prefetch-dot').classList.add('ready');}}
+  catch(e){console.warn('prefetch:',e.message);}
+  prefetchingFor=null;
+}
+
+// ═══════ INLINE ROW ADD (no modal) ════════════════════════
+function addRow(type){
+  const idx=entries.length;
+  const defaults={
+    drug:{drug_name:'',strength:'',strength_unit:'mg',second_ingreadient_strength:'',second_unit:'mg',quantity:'',form:'',frequency:'',duration:'',unity_of_duration:'j'},
+    analyse:{test_name:'',type:'',urgency:'',fasting:'',frequency:'',notes:''},
+    radio:{body_part:'',exam_type:'',side:'',urgency:'',notes:''},
+  };
+  entries.push({type,data:{...defaults[type]},_editing:true});
+  showTable();
+  renderTable();
+  // Scroll to new row and focus first field
+  setTimeout(()=>{
+    const tbody=document.getElementById('table-body');
+    const rows=tbody.querySelectorAll('tr');
+    const lastRow=rows[rows.length-1];
+    if(lastRow){lastRow.scrollIntoView({behavior:'smooth',block:'nearest'});const first=lastRow.querySelector('input,select');if(first)first.focus();}
+  },50);
+}
+
+// ═══════ TABLE RENDER ═════════════════════════════════════
+function showTable(){
+  document.getElementById('table-empty').style.display='none';
+  document.getElementById('data-table').style.display='table';
+  document.getElementById('btn-save').disabled=false;
+}
+function renderTable(){
+  if(!entries.length){
+    document.getElementById('table-empty').style.display='flex';
+    document.getElementById('data-table').style.display='none';
+    document.getElementById('btn-save').disabled=true;
+    return;
+  }
+  showTable();
+  document.getElementById('table-body').innerHTML=entries.map((e,i)=>e._editing?renderEditRow(e,i):renderViewRow(e,i)).join('');
+}
+
+function renderViewRow(e,i){
+  let bc,bl,detail='';
+  if(e.type==='drug'){bc='badge-drug';bl='Méd.';
+    detail=`<strong>${esc(e.data.drug_name)}</strong>`;
+    if(e.data.strength)detail+=` <span style="color:var(--accent)">${esc(e.data.strength)}</span>`;
+    if(e.data.form)detail+=` · ${esc(e.data.form)}`;
+    if(e.data.quantity)detail+=` · qté ${esc(e.data.quantity)}`;
+    if(e.data.frequency)detail+=`<br><span style="color:var(--text3)">${esc(e.data.frequency)}</span>`;
+    if(e.data.duration)detail+=`<span style="color:var(--text3)"> ${esc(e.data.duration)} ${esc(e.data.unity_of_duration)}</span>`;
+  }else if(e.type==='analyse'){bc='badge-analyse';bl='Analyse';
+    detail=`<strong>${esc(e.data.test_name)}</strong>`;
+    if(e.data.type)detail+=` · ${esc(e.data.type)}`;
+    if(e.data.urgency)detail+=`<br><span style="color:var(--text3)">${esc(e.data.urgency)}</span>`;
+  }else{bc='badge-radio';bl='Radio';
+    detail=`<strong>${esc(e.data.body_part)}</strong>`;
+    if(e.data.exam_type)detail+=` · ${esc(e.data.exam_type)}`;
+    if(e.data.side)detail+=` · ${esc(e.data.side)}`;
+    if(e.data.urgency)detail+=`<br><span style="color:var(--text3)">${esc(e.data.urgency)}</span>`;
+  }
+  return `<tr id="row-${i}">
+    <td class="view-cell" style="font-family:var(--mono);font-size:10px;color:var(--text3)">${i+1}</td>
+    <td class="view-cell"><span class="type-badge ${bc}">${bl}</span></td>
+    <td class="view-cell">${detail}</td>
+    <td><div class="row-actions">
+      <button class="btn-row btn-edit" onclick="startEdit(${i})" title="Modifier">✎</button>
+      <button class="btn-row btn-remove" onclick="removeEntry(${i})" title="Supprimer">✕</button>
+    </div></td>
+  </tr>`;
+}
+
+function renderEditRow(e,i){
+  const ab=`<div class="row-actions" style="flex-direction:column;padding:6px 4px;">
+    <button class="btn-row btn-save-row" onclick="commitEdit(${i})" title="Valider">✓</button>
+    <button class="btn-row btn-cancel-row" onclick="cancelEdit(${i})" title="Annuler">✕</button>
+  </div>`;
+  let bc,bl,fields;
+  if(e.type==='drug'){
+    bc='badge-drug';bl='Méd.';
+    const[sv,su]=splitVal(e.data.strength);
+    const[s2v,s2u]=splitVal(e.data.second_ingreadient_strength);
+    fields=`<div class="edit-grid">
+      <div class="ef full ac-wrap"><label>Nom du médicament *</label>
+        <input id="ef-dn-${i}" value="${esc(e.data.drug_name)}" placeholder="Commencez à taper..." autocomplete="off" oninput="acDrug(this.value,${i})" onfocus="acDrug(this.value,${i})">
+        <div class="ac-list" id="ac-${i}" style="display:none"></div>
+      </div>
+      <div class="ef"><label>Dosage / Force</label><div class="iu">
+        <input id="ef-sv-${i}" value="${esc(sv)}" placeholder="500">
+        <select id="ef-su-${i}">${selectOpts(['mg','g','mcg','UI','mg/ml','%','autre'],su||'mg')}</select>
+      </div></div>
+      <div class="ef"><label>2ème ingrédient</label><div class="iu">
+        <input id="ef-s2v-${i}" value="${esc(s2v)}" placeholder="125">
+        <select id="ef-s2u-${i}">${selectOpts(['mg','g','mcg','UI','mg/ml','%','autre'],s2u||'mg')}</select>
+      </div></div>
+      <div class="ef"><label>Forme</label>
+        <select id="ef-fo-${i}">${selectOpts(['','Comprimé','Gélule','Sirop','Suspension','Injection','Pommade','Crème','Patch','Suppositoire','Gouttes','Sachet','Autre'],e.data.form)}</select>
+      </div>
+      <div class="ef"><label>Quantité</label><input id="ef-qt-${i}" value="${esc(e.data.quantity)}" placeholder="ex: 30"></div>
+      <div class="ef"><label>Fréquence</label>
+        <select id="ef-fr-${i}">${selectOpts(['','1 fois/jour','2 fois/jour','3 fois/jour','4 fois/jour','Matin et soir','Matin, midi et soir','Si besoin','En continu','Autre'],e.data.frequency)}</select>
+      </div>
+      <div class="ef"><label>Durée</label><div class="iu">
+        <input id="ef-dv-${i}" type="number" value="${esc(e.data.duration)}" min="1" placeholder="7">
+        <select id="ef-du-${i}">${selectOpts(['j','sem','mois','chr'],e.data.unity_of_duration||'j')}</select>
+      </div></div>
+    </div>`;
+  }else if(e.type==='analyse'){
+    bc='badge-analyse';bl='Analyse';
+    fields=`<div class="edit-grid">
+      <div class="ef full"><label>Nom de l'analyse *</label>
+        <input id="ef-an-${i}" value="${esc(e.data.test_name)}" placeholder="NFS, Glycémie, CRP..."></div>
+      <div class="ef"><label>Type</label>
+        <select id="ef-at-${i}">${selectOpts(['','Bilan sanguin','Analyse d\'urine','Selles','Microbiologie','Sérologie','Bilan hormonal','Bilan lipidique','Bilan hépatique','Bilan rénal','Autre'],e.data.type)}</select></div>
+      <div class="ef"><label>Urgence</label>
+        <select id="ef-au-${i}">${selectOpts(['','Normale','Urgente','Très urgente'],e.data.urgency)}</select></div>
+      <div class="ef"><label>À jeun</label>
+        <select id="ef-af-${i}">${selectOpts(['','Oui','Non','Non précisé'],e.data.fasting)}</select></div>
+      <div class="ef"><label>Fréquence / Répétition</label>
+        <input id="ef-ar-${i}" value="${esc(e.data.frequency)}" placeholder="mensuel, unique..."></div>
+      <div class="ef"><label>Notes</label>
+        <textarea id="ef-ano-${i}">${esc(e.data.notes||'')}</textarea></div>
+    </div>`;
+  }else{
+    bc='badge-radio';bl='Radio';
+    fields=`<div class="edit-grid">
+      <div class="ef full"><label>Région / Partie du corps *</label>
+        <input id="ef-rp-${i}" value="${esc(e.data.body_part)}" placeholder="ex: Thorax, Genou gauche..."></div>
+      <div class="ef"><label>Type d'examen</label>
+        <select id="ef-rt-${i}">${selectOpts(['','Radiographie (X-ray)','IRM','Scanner (CT)','Échographie','Mammographie','Scintigraphie','TEP-Scan','Autre'],e.data.exam_type)}</select></div>
+      <div class="ef"><label>Côté</label>
+        <select id="ef-rs-${i}">${selectOpts(['','Gauche','Droit','Bilatéral','Non applicable'],e.data.side)}</select></div>
+      <div class="ef"><label>Urgence</label>
+        <select id="ef-ru-${i}">${selectOpts(['','Normale','Urgente','Très urgente'],e.data.urgency)}</select></div>
+      <div class="ef full"><label>Notes / Indication clinique</label>
+        <textarea id="ef-rn-${i}">${esc(e.data.notes||'')}</textarea></div>
+    </div>`;
+  }
+  return `<tr id="row-${i}" class="editing">
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:8px 8px;vertical-align:top;white-space:nowrap">${i+1}</td>
+    <td style="padding:8px 6px;vertical-align:top"><span class="type-badge ${bc}">${bl}</span></td>
+    <td style="vertical-align:top"><div class="edit-wrap">${fields}</div></td>
+    <td style="vertical-align:top">${ab}</td>
+  </tr>`;
+}
+
+function startEdit(i){
+  entries[i]._editing=true;
+  renderTable();
+  setTimeout(()=>{
+    const row=document.getElementById(`row-${i}`);
+    if(row){const first=row.querySelector('input,select');if(first)first.focus();}
+  },30);
+}
+
+function commitEdit(i){
+  const e=entries[i];
+  if(e.type==='drug'){
+    const sv=document.getElementById(`ef-sv-${i}`).value.trim(),su=document.getElementById(`ef-su-${i}`).value;
+    const s2v=document.getElementById(`ef-s2v-${i}`).value.trim(),s2u=document.getElementById(`ef-s2u-${i}`).value;
+    const dv=document.getElementById(`ef-dv-${i}`).value.trim(),du=document.getElementById(`ef-du-${i}`).value;
+    e.data={drug_name:document.getElementById(`ef-dn-${i}`).value.trim(),strength:sv?(sv+' '+su):'',second_ingreadient_strength:s2v?(s2v+' '+s2u):'',quantity:document.getElementById(`ef-qt-${i}`).value.trim(),form:document.getElementById(`ef-fo-${i}`).value,frequency:document.getElementById(`ef-fr-${i}`).value,duration:dv,unity_of_duration:dv?du:''};
+  }else if(e.type==='analyse'){
+    e.data={test_name:document.getElementById(`ef-an-${i}`).value.trim(),type:document.getElementById(`ef-at-${i}`).value,urgency:document.getElementById(`ef-au-${i}`).value,fasting:document.getElementById(`ef-af-${i}`).value,frequency:document.getElementById(`ef-ar-${i}`).value.trim(),notes:(document.getElementById(`ef-ano-${i}`)?.value||'').trim()};
+  }else{
+    e.data={body_part:document.getElementById(`ef-rp-${i}`).value.trim(),exam_type:document.getElementById(`ef-rt-${i}`).value,side:document.getElementById(`ef-rs-${i}`).value,urgency:document.getElementById(`ef-ru-${i}`).value,notes:(document.getElementById(`ef-rn-${i}`)?.value||'').trim()};
+  }
+  // Validate mandatory fields for this row before closing
+  const mandatory=mandatoryConfig[e.type]||[];
+  const missing=mandatory.filter(key=>!(e.data[key]||'').trim());
+  if(missing.length){
+    // Keep row open and highlight missing fields
+    setTimeout(()=>{
+      missing.forEach(key=>{
+        const fieldId=getFieldId(e.type,key,i);
+        if(fieldId){const el=document.getElementById(fieldId);if(el)el.classList.add('required-err');}
+      });
+    },30);
+    const labels={drug_name:'Nom',test_name:'Nom',body_part:'Région',strength:'Force',form:'Forme',quantity:'Qté',frequency:'Fréquence',duration:'Durée',type:'Type',urgency:'Urgence',fasting:'À jeun',exam_type:'Type examen',side:'Côté'};
+    setStatus('⚠ Champs requis: '+missing.map(k=>labels[k]||k).join(', '));
+    return; // don't close the row
+  }
+  setStatus('');
+  delete e._editing; renderTable();
+}
+function cancelEdit(i){
+  const e=entries[i];
+  const hasData=e.data.drug_name||e.data.test_name||e.data.body_part;
+  if(!hasData){entries.splice(i,1);}else{delete e._editing;}
+  renderTable();
+}
+function removeEntry(i){ entries.splice(i,1); renderTable(); }
+
+// Autocomplete in edit rows
+function acDrug(q,i){
+  const list=document.getElementById(`ac-${i}`);
+  const pool=q.trim()?drugNames.filter(n=>n.toLowerCase().includes(q.toLowerCase())):drugNames;
+  const m=pool.slice(0,16);
+  if(!m.length){list.style.display='none';return;}
+  const qe=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  list.innerHTML=m.map(n=>`<div onclick="pickDrug('${n.replace(/'/g,"\\'")}',${i})">${q?n.replace(new RegExp(`(${qe})`,'gi'),'<mark>$1</mark>'):esc(n)}</div>`).join('');
+  list.style.display='block';
+}
+function pickDrug(name,i){document.getElementById(`ef-dn-${i}`).value=name;document.getElementById(`ac-${i}`).style.display='none';}
+document.addEventListener('click',e=>{if(!e.target.closest('.ac-wrap'))document.querySelectorAll('.ac-list').forEach(el=>el.style.display='none');});
+
+// ═══════ MANDATORY VALIDATION ════════════════════════════
+function validateEntries(){
+  // First commit any open edit row
+  document.querySelectorAll('tr.editing').forEach(tr=>{
+    const idx=parseInt(tr.id.replace('row-',''));
+    if(!isNaN(idx))commitEdit(idx);
+  });
+
+  let errors=[];
+  entries.forEach((e,i)=>{
+    const mandatory=mandatoryConfig[e.type]||[];
+    mandatory.forEach(key=>{
+      const val=e.data[key]||'';
+      if(!val.trim()) errors.push({i,key,type:e.type});
+    });
+  });
+
+  if(!errors.length){setStatus('');return true;}
+
+  // Re-render to show edit rows with errors
+  errors.forEach(({i})=>{ entries[i]._editing=true; });
+  renderTable();
+
+  // After render, highlight fields
+  setTimeout(()=>{
+    errors.forEach(({i,key,type})=>{
+      const fieldId=getFieldId(type,key,i);
+      if(fieldId){const el=document.getElementById(fieldId);if(el)el.classList.add('required-err');}
+    });
+  },30);
+
+  const types=[...new Set(errors.map(e=>e.type))].map(t=>t==='drug'?'médicament':t==='analyse'?'analyse':'radio');
+  setStatus(`⚠ Champs obligatoires manquants : ${types.join(', ')}`);
+  return false;
+}
+
+function getFieldId(type,key,i){
+  const map={
+    drug:{drug_name:`ef-dn-${i}`,strength:`ef-sv-${i}`,form:`ef-fo-${i}`,quantity:`ef-qt-${i}`,frequency:`ef-fr-${i}`,duration:`ef-dv-${i}`},
+    analyse:{test_name:`ef-an-${i}`,type:`ef-at-${i}`,urgency:`ef-au-${i}`,fasting:`ef-af-${i}`},
+    radio:{body_part:`ef-rp-${i}`,exam_type:`ef-rt-${i}`,side:`ef-rs-${i}`,urgency:`ef-ru-${i}`},
+  };
+  return map[type]?.[key]||null;
+}
+
+// Clear red on input
+document.addEventListener('input',e=>{ if(e.target.classList.contains('required-err')){e.target.classList.remove('required-err');setStatus('');}});
+document.addEventListener('change',e=>{ if(e.target.classList.contains('required-err')){e.target.classList.remove('required-err');setStatus('');}});
+
+// ═══════ FLAG ═════════════════════════════════════════════
+function confirmFlag(type){
+  if(currentIdx<0)return; pendingFlag=type;
+  document.getElementById('flag-icon').textContent=type==='illegible'?'✋':'📷';
+  document.getElementById('flag-title').textContent=type==='illegible'?'Écriture illisible':'Mauvaise qualité';
+  document.getElementById('flag-desc').innerHTML= type==='illegible'?`Le contenu, ou une partie de celui-ci, est illisible. Êtes-vous d'accord ?`:"La qualité de l'image ou l'éclairage est très médiocre.";
+  document.getElementById('flag-confirm-btn').style.background=type==='illegible'?'var(--warning)':'var(--danger)';
+  document.getElementById('modal-flag').classList.add('open');
+}
+function closeFlag(){document.getElementById('modal-flag').classList.remove('open');}
+document.getElementById('modal-flag').addEventListener('click',e=>{if(e.target===e.currentTarget)closeFlag();});
+async function submitFlag(){
+  closeFlag(); if(currentIdx<0||!pendingFlag)return;
+  const file=imageFiles[currentIdx];
+  try{
+    await writeStateWith(CONFIG.FLAGS_FILE,data=>{if(!data[file.name])data[file.name]=[];data[file.name].push({type:pendingFlag,flagged_by:currentUser.username,flagged_at:new Date().toISOString()});flags=data;return data;},`Flag ${file.name}`);
+    showToast('Image signalée','warning');
+    lockedFile=null; entries=[]; renderTable();
+    imageFiles.splice(currentIdx,1); currentIdx=-1;
+    await assignNextImage();
+  }catch(e){showToast('Erreur: '+e.message,'error');}
+  pendingFlag=null;
+}
+
+// ═══════ SAVE ════════════════════════════════════════════
+async function saveLabel(){
+  if(!entries.length)return;
+  if(!validateEntries())return;
+
+  const file=imageFiles[currentIdx];
+  const num=labelCounter;
+  const ext=file.name.split('.').pop().toLowerCase();
+  const b64=document.getElementById('rx-image').dataset.b64||'';
+  if(!b64){showToast('Image non chargée','error');return;}
+
+  const entriesSnap=JSON.parse(JSON.stringify(entries));
+  const fileSnap={...file};
+  const flagsSnap=JSON.parse(JSON.stringify(flags[file.name]||[]));
+
+  // Immediately advance to next image — no "Sauvegarde..." shown
+  labelCounter++; myLabeledCount++; updateMyCounter();
+  entries=[]; renderTable();
+
+  // Release lock then assign next image — sequential to avoid 409
+  imageFiles.splice(currentIdx,1); currentIdx=-1;
+  updateCounter();
+  // Show next image immediately (uses prefetch cache if available) — non-blocking
+  lockedFile=null; assignNextImage();
+
+  // Queue background uploads — they run after assignNextImage acquires its lock
+  uploadQueue.push(async()=>{
+    const imgDest=`${CONFIG.LABELED_PATH}/${num}.${ext}`;
+    const exImg=await GH.getFile(imgDest);
+    await GH.putBinary(imgDest,b64,`Add image ${num}.${ext}`,exImg?exImg.sha:null);
+
+    // Training JSON — clean
+    const trainJson={image:`${num}.${ext}`,labels:entriesSnap.map(e=>({type:e.type,...e.data}))};
+    const jsonDest=`${CONFIG.LABELED_PATH}/${num}.json`;
+    const exJson=await GH.getFile(jsonDest);
+    await GH.putFile(jsonDest,JSON.stringify(trainJson,null,2),`Label ${num}.json`,exJson?exJson.sha:null);
+
+    // Move original to processed
+    const procDest=`${CONFIG.PROCESSED_PATH}/${fileSnap.name}`;
+    const exProc=await GH.getFile(procDest);
+    await GH.putBinary(procDest,b64,`Processed ${fileSnap.name}`,exProc?exProc.sha:null);
+    const src=await GH.getFile(`${CONFIG.IMAGES_PATH}/${fileSnap.name}`);
+    if(src)await GH.deleteFile(`${CONFIG.IMAGES_PATH}/${fileSnap.name}`,`Remove ${fileSnap.name}`,src.sha);
+
+    // ── Conflict check: re-read progress before writing ──
+    // If another user saved this image while we were labeling, skip gracefully
+    const{data:latestProg}=await readState(CONFIG.PROGRESS_FILE);
+    if(latestProg[fileSnap.name]){
+      showToast(`⚠ Image déjà sauvegardée par ${latestProg[fileSnap.name].labeled_by} — ignorée`,'warning');
+      progress=latestProg;
+      return;
+    }
+    await writeStateWith(CONFIG.PROGRESS_FILE,data=>{
+      // Double-check inside mutator (handles race between our read and write)
+      if(data[fileSnap.name]) return data; // already saved, don't overwrite
+      data[fileSnap.name]={output_num:num,output_image:`${num}.${ext}`,output_json:`${num}.json`,labeled_by:currentUser.username,labeled_at:new Date().toISOString(),labels_count:entriesSnap.length};
+      progress=data; return data;
+    },`Progress: ${fileSnap.name}→${num}`);
+
+    showToast(`✅ ${num}.json sauvegardé`,'success');
+  });
+  processUploadQueue();
+}
+
+async function skipImage(){
+  if(currentIdx<0)return;
+  lockedFile=null;
+  entries=[]; renderTable(); currentIdx=-1; await assignNextImage();
+}
+
+async function processUploadQueue(){
+  if(uploading||!uploadQueue.length)return;
+  uploading=true;
+  while(uploadQueue.length){const t=uploadQueue.shift();try{await t();}catch(e){console.error('upload queue:',e);showToast('Erreur upload: '+e.message,'error');}}
+  uploading=false;
+}
+
+// ═══════ ADMIN ═══════════════════════════════════════════
+function launchAdmin(){
+  document.getElementById('admin-app').classList.add('visible');
+  document.getElementById('admin-name-display').textContent=currentUser.displayName;
+  document.getElementById('admin-avatar').textContent=initials(currentUser.displayName);
+  loadAdminDashboard();
+}
+async function adminRefresh(){document.getElementById('admin-body').innerHTML='<div style="display:flex;align-items:center;gap:12px;color:var(--text3);padding:40px 0;"><div class="spinner"></div><span>Actualisation...</span></div>';await loadAdminDashboard();}
+
+async function loadAdminDashboard(){
+  try{
+    const[prog,flg,cfg,imgList,procList]=await Promise.all([
+      readState(CONFIG.PROGRESS_FILE),readState(CONFIG.FLAGS_FILE),readState(CONFIG.CONFIG_FILE),
+      GH.listFolder(CONFIG.IMAGES_PATH),GH.listFolder(CONFIG.PROCESSED_PATH),
+    ]);
+    const pd=prog.data,ld={},fd=flg.data,cd=cfg.data;
+    if(cd.mandatory)mandatoryConfig=cd.mandatory;
+    const totalImages=imgList.filter(f=>/\.(jpe?g|png|webp|bmp)$/i.test(f.name)).length+procList.filter(f=>/\.(jpe?g|png|webp|bmp)$/i.test(f.name)).length;
+    const labeled=Object.keys(pd).length,flagged=Object.keys(fd).length,pending=totalImages-labeled;
+    const labelers=USERS.filter(u=>u.role==='labeler');
+    const us={};
+    labelers.forEach(u=>{us[u.username]={displayName:u.displayName,labeled:0,flags_illegible:0,flags_bad:0,days:{}};});
+    Object.values(pd).forEach(p=>{const u=us[p.labeled_by];if(!u)return;u.labeled++;const d=p.labeled_at.slice(0,10);u.days[d]=(u.days[d]||0)+1;});
+    Object.values(fd).forEach(fl=>{fl.forEach(f=>{const u=us[f.flagged_by];if(!u)return;if(f.type==='illegible')u.flags_illegible++;else u.flags_bad++;});});
+
+    document.getElementById('admin-body').innerHTML=`
+    <div class="stat-row">
+      <div class="stat-card c-blue"><div class="sc-val">${totalImages}</div><div class="sc-lbl">Total images</div></div>
+      <div class="stat-card c-green"><div class="sc-val">${labeled}</div><div class="sc-lbl">Étiquetées</div></div>
+      <div class="stat-card c-yellow"><div class="sc-val">${flagged}</div><div class="sc-lbl">Signalées</div></div>
+      <div class="stat-card c-red"><div class="sc-val">${pending}</div><div class="sc-lbl">En attente</div></div>
+    </div>
+
+    <div class="section-title">Performance par utilisateur</div>
+    <table class="admin-table"><thead><tr><th>Utilisateur</th><th>Étiquetées</th><th>Progression</th><th>Illisibles</th><th>Mauvaises</th></tr></thead>
+    <tbody>${labelers.map(u=>{const s=us[u.username],pct=totalImages?Math.round(s.labeled/totalImages*100):0;return`<tr><td>${s.displayName}</td><td style="font-family:var(--mono);color:var(--accent)">${s.labeled}</td><td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:var(--accent)"></div></div><span class="prog-pct">${pct}%</span></div></td><td style="color:var(--warning);font-family:var(--mono)">${s.flags_illegible}</td><td style="color:var(--danger);font-family:var(--mono)">${s.flags_bad}</td></tr>`;}).join('')}</tbody></table>
+
+    <div class="section-title">Activité quotidienne (30 derniers jours)</div>
+    ${labelers.map(u=>{const s=us[u.username],days=last30Days(),mx=Math.max(...days.map(d=>s.days[d]||0),1);return`<div style="margin-bottom:18px"><div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500">${s.displayName}</div><div class="timeline-grid">${days.map(d=>{const cnt=s.days[d]||0;const bg=cnt?`rgba(79,142,247,${Math.max(0.12,cnt/mx)})`:'var(--surface2)';return`<div class="tl-day" style="background:${bg}"><div class="tl-tip">${d}: ${cnt}</div></div>`;}).join('')}</div></div>`;}).join('')}
+
+    <div class="section-title">Champs obligatoires
+      <button class="btn-save-config" onclick="saveMandatoryConfig()" style="margin-left:auto;font-size:11px;padding:5px 12px;">💾 Enregistrer</button>
+    </div>
+    <div class="mf-grid">
+      <div class="mf-card"><h4>💊 Médicament</h4>
+        ${DRUG_FIELDS.map(f=>`<div class="mf-item"><input type="checkbox" id="mf-drug-${f.key}" ${(mandatoryConfig.drug||[]).includes(f.key)?'checked':''}><label for="mf-drug-${f.key}">${f.label}</label></div>`).join('')}
+      </div>
+      <div class="mf-card"><h4>🧪 Analyse</h4>
+        ${ANALYSE_FIELDS.map(f=>`<div class="mf-item"><input type="checkbox" id="mf-analyse-${f.key}" ${(mandatoryConfig.analyse||[]).includes(f.key)?'checked':''}><label for="mf-analyse-${f.key}">${f.label}</label></div>`).join('')}
+      </div>
+      <div class="mf-card"><h4>📷 Radio</h4>
+        ${RADIO_FIELDS.map(f=>`<div class="mf-item"><input type="checkbox" id="mf-radio-${f.key}" ${(mandatoryConfig.radio||[]).includes(f.key)?'checked':''}><label for="mf-radio-${f.key}">${f.label}</label></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="section-title">Images signalées</div>
+    <div class="search-row">
+      <input class="search-box" id="flag-search" placeholder="Rechercher..." oninput="filterFlagTable()">
+      <select class="filter-select" id="flag-filter" onchange="filterFlagTable()">
+        <option value="">Tous</option><option value="illegible">Illisibles</option><option value="bad_image">Mauvaises</option>
+      </select>
+    </div>
+    <table class="admin-table"><thead><tr><th>Image originale</th><th>Signalé par</th><th>Type</th><th>Date</th><th>Statut</th></tr></thead>
+    <tbody id="flag-tbody">${buildFlagRows(fd,pd)}</tbody></table>
+
+    <div class="section-title">Verrous actifs</div>
+    <table class="admin-table"><thead><tr><th>Image</th><th>Assignée à</th><th>Depuis</th></tr></thead>
+    <tbody>${Object.entries(ld).map(([img,lk])=>`<tr><td style="font-family:var(--mono);font-size:12px">${img}</td><td>${USERS.find(u=>u.username===lk.locked_by)?.displayName||lk.locked_by}</td><td style="color:var(--text3);font-family:var(--mono)">${timeAgo(lk.locked_at)}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--text3);text-align:center;padding:18px">Aucun verrou actif</td></tr>'}</tbody></table>`;
+  }catch(e){document.getElementById('admin-body').innerHTML=`<p style="color:var(--danger);padding:20px">Erreur: ${e.message}</p>`;console.error(e);}
+}
+
+async function saveMandatoryConfig(){
+  const newCfg={
+    drug:DRUG_FIELDS.filter(f=>document.getElementById(`mf-drug-${f.key}`)?.checked).map(f=>f.key),
+    analyse:ANALYSE_FIELDS.filter(f=>document.getElementById(`mf-analyse-${f.key}`)?.checked).map(f=>f.key),
+    radio:RADIO_FIELDS.filter(f=>document.getElementById(`mf-radio-${f.key}`)?.checked).map(f=>f.key),
+  };
+  try{
+    await writeStateWith(CONFIG.CONFIG_FILE,data=>{data.mandatory=newCfg;return data;},'Update mandatory config');
+    mandatoryConfig=newCfg;
+    showToast('Configuration enregistrée','success');
+  }catch(e){showToast('Erreur: '+e.message,'error');}
+}
+
+function buildFlagRows(fd,pd){
+  const rows=[];
+  Object.entries(fd).forEach(([img,fl])=>fl.forEach(f=>{
+    const p=pd[img];
+    const status=p?`<span class="flag-badge flag-labeled">✓ ${p.labeled_by} → ${p.output_json}</span>`:`<span class="flag-badge" style="background:var(--surface3);color:var(--text3)">En attente</span>`;
+    rows.push(`<tr data-img="${img}" data-type="${f.type}"><td style="font-family:var(--mono);font-size:12px">${img}</td><td>${USERS.find(u=>u.username===f.flagged_by)?.displayName||f.flagged_by}</td><td><span class="flag-badge ${f.type==='illegible'?'flag-illegible':'flag-bad'}">${f.type==='illegible'?'✋ Illisible':'📷 Mauvaise'}</span></td><td style="color:var(--text3);font-family:var(--mono);font-size:11px">${f.flagged_at.slice(0,10)}</td><td>${status}</td></tr>`);
+  }));
+  return rows.join('')||'<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:18px">Aucune image signalée</td></tr>';
+}
+function filterFlagTable(){const q=(document.getElementById('flag-search')?.value||'').toLowerCase(),t=document.getElementById('flag-filter')?.value||'';document.querySelectorAll('#flag-tbody tr').forEach(r=>{r.style.display=(!q||(r.dataset.img||'').toLowerCase().includes(q))&&(!t||r.dataset.type===t)?'':'none';});}
+
+// ═══════ HELPERS ══════════════════════════════════════════
+function splitVal(s){if(!s)return['',''];const p=s.trim().split(' ');return p.length>=2?[p[0],p.slice(1).join(' ')]:[s,''];}
+function last30Days(){const d=[];for(let i=29;i>=0;i--){const x=new Date();x.setDate(x.getDate()-i);d.push(x.toISOString().slice(0,10));}return d;}
+function timeAgo(iso){const s=Math.floor((Date.now()-new Date(iso).getTime())/1000);if(s<60)return`${s}s`;if(s<3600)return`${Math.floor(s/60)}m`;return`${Math.floor(s/3600)}h`;}
+function initials(n){return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function selectOpts(opts,sel){return opts.map(o=>`<option value="${esc(o)}"${o===sel?' selected':''}>${o===''?'— Sélectionner —':esc(o)}</option>`).join('');}
+function setStatus(msg){const el=document.getElementById('status-msg');if(el)el.textContent=msg;}
+function showToast(msg,type='success'){const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500);}
+</script>
+</body>
+</html>
